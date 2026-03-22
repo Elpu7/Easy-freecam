@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "id": "easy-freecam",
+  "version": "${version}",
+  "name": "Easy-freecam",
+  "description": "This mod adds the opportunity to freely move your camera around the world without affecting your player.",
+  "authors": ["Elpu7"],
+  "contact": {
+    "homepage": "https://modrinth.com/project/easy-freecam",
+    "issues": "https://github.com/Elpu7/easy-freecam/issues",
+    "sources": "https://github.com/Elpu7/easy-freecam"
+  },
+  "license": "MIT",
+  "icon": "assets/easy-freecam/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "dev.elpu7.easyFreecam.client.EasyFreecamClient"
+    ],
+    "main": [
+      "dev.elpu7.easyFreecam.EasyFreecam"
+    ]
+  },
+  "mixins": [
+    "easy-freecam.mixins.json",
+    {
+      "config": "easy-freecam.client.mixins.json",
+      "environment": "client"
+    }
+  ],
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric-api": "*",
+    "minecraft": "${minecraft_version}"
+  }
+}
