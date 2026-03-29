@@ -9,6 +9,9 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.Marker;
 import net.minecraft.world.phys.Vec3;
 import org.lwjgl.glfw.GLFW;
 import com.mojang.blaze3d.platform.InputConstants;
@@ -37,6 +40,8 @@ public final class FreecamController {
     private static boolean sprintToggled;
     private static boolean sprintKeyWasDown;
     private static boolean previousChunkCullingState;
+    private static Entity previousCameraEntity;
+    private static Marker freecamCameraEntity;
 
     private FreecamController() {
     }
@@ -66,6 +71,7 @@ public final class FreecamController {
         sprintKeyWasDown = sprintKeyDown;
 
         tickMovement(client);
+        syncCameraEntity(client);
     }
 
     private static void toggle(Minecraft client) {
@@ -91,6 +97,11 @@ public final class FreecamController {
         sprintKeyWasDown = false;
         previousChunkCullingState = client.smartCull;
         client.smartCull = false;
+        previousCameraEntity = client.getCameraEntity();
+        freecamCameraEntity = createCameraEntity(client);
+        syncCameraEntity(client);
+        setMainCameraEntity(client, freecamCameraEntity);
+        client.levelRenderer.allChanged();
         sendStatus(player, true);
     }
 
@@ -99,6 +110,7 @@ public final class FreecamController {
         sprintToggled = false;
         sprintKeyWasDown = false;
         client.smartCull = previousChunkCullingState;
+        restoreCameraEntity(client);
         if (notifyPlayer && client.player != null) {
             sendStatus(client.player, false);
         }
@@ -173,6 +185,10 @@ public final class FreecamController {
         return pitch;
     }
 
+    public static Entity getCameraEntity() {
+        return freecamCameraEntity;
+    }
+
     public static void handleMouseLook(double deltaX, double deltaY) {
         yaw += (float)deltaX * LOOK_MULTIPLIER;
         pitch = Mth.clamp(pitch + (float)deltaY * LOOK_MULTIPLIER, -90.0F, 90.0F);
@@ -180,5 +196,75 @@ public final class FreecamController {
 
     public static boolean shouldHideHand() {
         return enabled;
+    }
+
+    public static void syncRenderCameraEntity(Minecraft client, float tickProgress) {
+        if (freecamCameraEntity == null) {
+            return;
+        }
+
+        Vec3 interpolatedPosition = getInterpolatedPosition(tickProgress);
+        freecamCameraEntity.setOldPosAndRot(interpolatedPosition, yaw, pitch);
+        freecamCameraEntity.setPos(interpolatedPosition);
+        freecamCameraEntity.setYRot(yaw);
+        freecamCameraEntity.setXRot(pitch);
+        freecamCameraEntity.setYHeadRot(yaw);
+
+        if (client.getCameraEntity() != freecamCameraEntity) {
+            client.setCameraEntity(freecamCameraEntity);
+        }
+    }
+
+    private static void setMainCameraEntity(Minecraft client, Entity cameraEntity) {
+        if (client.gameRenderer == null) {
+            return;
+        }
+
+        client.gameRenderer.getMainCamera().setLevel(client.level);
+        client.gameRenderer.getMainCamera().setEntity(cameraEntity);
+    }
+
+    private static Marker createCameraEntity(Minecraft client) {
+        Marker cameraEntity = new Marker(EntityType.MARKER, client.level);
+        cameraEntity.noPhysics = true;
+        cameraEntity.setNoGravity(true);
+        cameraEntity.setSilent(true);
+        cameraEntity.setInvisible(true);
+        return cameraEntity;
+    }
+
+    private static void syncCameraEntity(Minecraft client) {
+        if (freecamCameraEntity == null) {
+            return;
+        }
+
+        freecamCameraEntity.setOldPosAndRot(previousPosition, yaw, pitch);
+        freecamCameraEntity.setPos(position);
+        freecamCameraEntity.setYRot(yaw);
+        freecamCameraEntity.setXRot(pitch);
+        freecamCameraEntity.setYHeadRot(yaw);
+
+        if (client.getCameraEntity() != freecamCameraEntity) {
+            client.setCameraEntity(freecamCameraEntity);
+        }
+    }
+
+    private static void restoreCameraEntity(Minecraft client) {
+        Entity restoredCamera = previousCameraEntity;
+        if (client.player != null && (restoredCamera == null || restoredCamera.level() != client.player.level())) {
+            restoredCamera = client.player;
+        }
+
+        if (restoredCamera != null) {
+            client.setCameraEntity(restoredCamera);
+            setMainCameraEntity(client, restoredCamera);
+        }
+
+        previousCameraEntity = null;
+        freecamCameraEntity = null;
+
+        if (client.levelRenderer != null) {
+            client.levelRenderer.allChanged();
+        }
     }
 }

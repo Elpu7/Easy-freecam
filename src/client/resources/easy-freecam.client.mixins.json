@@ -7,7 +7,9 @@
     "CameraMixin",
     "ClientPlayerEntityMixin",
     "EntityMixin",
-    "GameRendererMixin"
+    "GameRendererMixin",
+    "GuiMixin",
+    "LevelRendererMixin"
   ],
   "injectors": {
     "defaultRequire": 1
