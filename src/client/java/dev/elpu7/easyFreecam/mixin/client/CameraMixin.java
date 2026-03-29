@@ -1,11 +1,10 @@
 package dev.elpu7.easyFreecam.mixin.client;
 
 import dev.elpu7.easyFreecam.client.FreecamController;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.render.Camera;
-import net.minecraft.entity.Entity;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.World;
+import net.minecraft.client.Camera;
+import net.minecraft.client.DeltaTracker;
+import net.minecraft.client.Minecraft;
+import net.minecraft.world.phys.Vec3;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -18,16 +17,17 @@ public abstract class CameraMixin {
     protected abstract void setRotation(float yaw, float pitch);
 
     @Shadow
-    protected abstract void setPos(Vec3d pos);
+    protected abstract void setPosition(Vec3 pos);
 
     @Inject(method = "update", at = @At("TAIL"))
-    private void easyFreecam$applyFreecamPosition(World area, Entity focusedEntity, boolean thirdPerson, boolean inverseView, float tickProgress, CallbackInfo ci) {
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (!FreecamController.isEnabled() || client.player == null || focusedEntity != client.player) {
+    private void easyFreecam$applyFreecamPosition(DeltaTracker deltaTracker, CallbackInfo ci) {
+        Minecraft client = Minecraft.getInstance();
+        if (!FreecamController.isEnabled() || client.player == null || client.getCameraEntity() != client.player) {
             return;
         }
 
+        float tickProgress = deltaTracker.getGameTimeDeltaPartialTick(false);
         this.setRotation(FreecamController.getYaw(), FreecamController.getPitch());
-        this.setPos(FreecamController.getInterpolatedPosition(tickProgress));
+        this.setPosition(FreecamController.getInterpolatedPosition(tickProgress));
     }
 }

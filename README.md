@@ -18,7 +18,7 @@ It gives you a smooth free camera that can move around the world with normal mov
 
 ## Requirements
 
-- Minecraft `1.21.11`
+- Minecraft `26.1`
 - Fabric Loader
 - Fabric API
 
