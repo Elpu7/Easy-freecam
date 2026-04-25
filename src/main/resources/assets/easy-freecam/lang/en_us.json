@@ -3,5 +3,22 @@
   "key.categories.easy-freecam.controls": "Freecam",
   "key.easy-freecam.toggle_freecam": "Toggle Freecam",
   "message.easy-freecam.enabled": "Freecam enabled",
-  "message.easy-freecam.disabled": "Freecam disabled"
+  "message.easy-freecam.disabled": "Freecam disabled",
+  "message.easy-freecam.disabled_damage": "Freecam disabled after taking damage",
+  "screen.easy-freecam.config": "Easy Freecam",
+  "option.easy-freecam.header.movement": "Movement",
+  "option.easy-freecam.header.visual": "Visual",
+  "option.easy-freecam.header.safety": "Safety",
+  "option.easy-freecam.horizontal_speed": "Horizontal speed",
+  "option.easy-freecam.vertical_speed": "Vertical speed",
+  "option.easy-freecam.sprint_multiplier": "Sprint multiplier",
+  "option.easy-freecam.show_hand": "Show hand",
+  "option.easy-freecam.show_player": "Show player",
+  "option.easy-freecam.disable_on_damage": "Disable on damage",
+  "tooltip.easy-freecam.horizontal_speed": "How fast the freecam moves sideways and forward.",
+  "tooltip.easy-freecam.vertical_speed": "How fast the freecam moves up and down.",
+  "tooltip.easy-freecam.sprint_multiplier": "How much faster sprint mode moves the freecam.",
+  "tooltip.easy-freecam.show_hand": "Render the held item and hand while freecam is active.",
+  "tooltip.easy-freecam.show_player": "Keep your real player model visible while using freecam.",
+  "tooltip.easy-freecam.disable_on_damage": "Automatically return to your player when you take damage."
 }

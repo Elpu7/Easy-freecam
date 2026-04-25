@@ -6,6 +6,7 @@ public class EasyFreecamClient implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
+        EasyFreecamConfigManager.load();
         FreecamController.initialize();
     }
 }

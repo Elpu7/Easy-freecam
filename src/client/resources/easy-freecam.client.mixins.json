@@ -5,11 +5,14 @@
   "compatibilityLevel": "JAVA_25",
   "client": [
     "CameraMixin",
+    "ClientInputAccessor",
     "ClientPlayerEntityMixin",
     "EntityMixin",
     "GameRendererMixin",
     "GuiMixin",
-    "LevelRendererMixin"
+    "LevelRendererMixin",
+    "MinecraftMixin",
+    "MultiPlayerGameModeMixin"
   ],
   "injectors": {
     "defaultRequire": 1

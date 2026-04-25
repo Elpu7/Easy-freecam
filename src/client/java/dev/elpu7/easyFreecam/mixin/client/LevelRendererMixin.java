@@ -21,7 +21,7 @@ public abstract class LevelRendererMixin {
     )
     private Entity easyFreecam$keepLocalPlayerVisible(Camera camera) {
         Minecraft client = Minecraft.getInstance();
-        if (FreecamController.isEnabled() && client.player != null) {
+        if (FreecamController.isEnabled() && client.player != null && FreecamController.shouldShowPlayerModel()) {
             return client.player;
         }
 

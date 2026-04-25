@@ -17,6 +17,9 @@
     "client": [
       "dev.elpu7.easyFreecam.client.EasyFreecamClient"
     ],
+    "modmenu": [
+      "dev.elpu7.easyFreecam.client.compat.EasyFreecamModMenu"
+    ],
     "main": [
       "dev.elpu7.easyFreecam.EasyFreecam"
     ]
@@ -29,9 +32,12 @@
     }
   ],
   "depends": {
-    "fabricloader": ">=0.19.1",
+    "fabricloader": "${loader_dependency}",
     "fabric-api": "*",
-    "minecraft": "~26.1.2",
+    "minecraft": "${minecraft_dependency}",
     "java": ">=25"
+  },
+  "suggests": {
+    "modmenu": "*"
   }
 }

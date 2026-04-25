@@ -3,11 +3,29 @@ plugins {
     id 'maven-publish'
 }
 
+def selectedMcProfile = providers.gradleProperty("mc_profile").orNull
+if (selectedMcProfile != null) {
+    def profileFile = file("gradle/version-profiles/${selectedMcProfile}.properties")
+    if (!profileFile.exists()) {
+        throw new GradleException("Unknown mc_profile '${selectedMcProfile}'")
+    }
+
+    def profileProperties = new Properties()
+    profileFile.withInputStream { profileProperties.load(it) }
+    profileProperties.each { key, value ->
+        ext.set(key.toString(), value.toString())
+    }
+}
+
 version = project.mod_version
 group = project.maven_group
 
 base {
     archivesName = project.archives_base_name
+}
+
+if (project.hasProperty("custom_build_dir")) {
+    layout.buildDirectory.set(file(project.custom_build_dir))
 }
 
 loom {
@@ -23,6 +41,11 @@ loom {
 
 
 repositories {
+    maven {
+        name = "Terraformers"
+        url = "https://maven.terraformersmc.com/"
+    }
+
     // Add repositories to retrieve artifacts from in here.
     // You should only use this when depending on other mods because
     // Loom adds the essential maven repositories to download Minecraft and libraries from automatically.
@@ -37,14 +60,21 @@ dependencies {
 
     implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
     clientImplementation "net.fabricmc.fabric-api:fabric-key-mapping-api-v1:${project.fabric_key_mapping_version}"
+    compileOnly "com.terraformersmc:modmenu:${project.modmenu_version}"
 }
 
 processResources {
     inputs.property "version", project.version
+    inputs.property "minecraft_dependency", project.minecraft_dependency
+    inputs.property "loader_dependency", project.loader_dependency
     filteringCharset "UTF-8"
 
     filesMatching("fabric.mod.json") {
-        expand "version": project.version
+        expand(
+            "version": project.version,
+            "minecraft_dependency": project.minecraft_dependency,
+            "loader_dependency": project.loader_dependency
+        )
     }
 }
 
