@@ -7,7 +7,10 @@ It gives you a smooth free camera that can move around the world with normal mov
 - Toggle freecam with a configurable keybind
 - Move the camera with normal player movement controls
 - Toggle sprint for faster freecam movement
-- Smooth spectator-style camera movement
+- Configure horizontal speed, vertical speed, and sprint multiplier
+- Toggle hand visibility and player model visibility while freecam is active
+- Optionally disable freecam automatically when taking damage
+- Open the config screen through ModMenu
 - Keeps your real player in place
 - Client-side only
 
@@ -18,9 +21,10 @@ It gives you a smooth free camera that can move around the world with normal mov
 
 ## Requirements
 
-- Minecraft `26.1.2`
+- Minecraft `26.1.x`
 - Fabric Loader
 - Fabric API
+- ModMenu is optional
 
 ## Notes
 
