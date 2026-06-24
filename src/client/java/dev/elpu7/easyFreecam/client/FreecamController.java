@@ -11,7 +11,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.Marker;
 import net.minecraft.world.entity.player.Input;
 import net.minecraft.world.phys.Vec2;
@@ -112,7 +112,7 @@ public final class FreecamController {
         freecamCameraEntity = createCameraEntity(client);
         syncCameraEntity(client);
         setMainCameraEntity(client, freecamCameraEntity);
-        client.levelRenderer.allChanged();
+        refreshLevelRenderer(client);
         sendStatus(player, true);
     }
 
@@ -341,12 +341,12 @@ public final class FreecamController {
             return;
         }
 
-        client.gameRenderer.getMainCamera().setLevel(client.level);
-        client.gameRenderer.getMainCamera().setEntity(cameraEntity);
+        client.gameRenderer.mainCamera().setLevel(client.level);
+        client.gameRenderer.mainCamera().setEntity(cameraEntity);
     }
 
     private static Marker createCameraEntity(Minecraft client) {
-        Marker cameraEntity = new Marker(EntityType.MARKER, client.level);
+        Marker cameraEntity = new Marker(EntityTypes.MARKER, client.level);
         cameraEntity.noPhysics = true;
         cameraEntity.setNoGravity(true);
         cameraEntity.setSilent(true);
@@ -404,8 +404,14 @@ public final class FreecamController {
         previousCameraEntity = null;
         freecamCameraEntity = null;
 
-        if (refreshRenderer && client.levelRenderer != null) {
-            client.levelRenderer.allChanged();
+        if (refreshRenderer) {
+            refreshLevelRenderer(client);
+        }
+    }
+
+    private static void refreshLevelRenderer(Minecraft client) {
+        if (client.levelExtractor != null) {
+            client.levelExtractor.allChanged();
         }
     }
 

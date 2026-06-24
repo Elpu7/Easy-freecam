@@ -98,7 +98,7 @@ public final class EasyFreecamConfigScreen extends OptionsSubScreen {
             key,
             OptionInstance.cachedConstantTooltip(Component.translatable(tooltipKey)),
             initialValue,
-            consumer
+            consumer::accept
         );
     }
 

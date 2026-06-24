@@ -21,7 +21,7 @@ It gives you a smooth free camera that can move around the world with normal mov
 
 ## Requirements
 
-- Minecraft `26.1.x`
+- Minecraft `26.+`
 - Fabric Loader
 - Fabric API
 - ModMenu is optional
