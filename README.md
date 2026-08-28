@@ -1,4 +1,6 @@
-Easy Freecam is a small client-side Fabric mod that lets you toggle a spectator-style freecam with a normal keybind instead of using commands or changing gamemodes. It gives you a smooth free camera that can move around the world with normal movement controls.
+Easy Freecam is a small client-side Fabric mod that lets you toggle a spectator-style freecam with a normal keybind instead of using commands or changing gamemodes.
+
+It gives you a smooth free camera that can move around the world with normal movement controls.
 
 <center>
 <img alt="Downloads" src="https://img.shields.io/modrinth/dt/easy-freecam?style=for-the-badge&amp;logo=modrinth&amp;logoColor=00AF5C&amp;label=DOWNLOADS&amp;labelColor=030B14&amp;color=00AF5C">
