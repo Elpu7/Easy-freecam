@@ -15,7 +15,7 @@ It gives you a smooth free camera that can move around the world with normal mov
 - Eat, drink, and use elytra rockets during freecam
 - Blocks accidental attacks, interactions, item drops, and swaps
 - Optional automatic disable when taking damage
-- Client side only
+- Client-side only
 
 ## Default keybinds
 
