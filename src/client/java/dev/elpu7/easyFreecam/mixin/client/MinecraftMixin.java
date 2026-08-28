@@ -11,6 +11,21 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(Minecraft.class)
 public abstract class MinecraftMixin {
+    @Inject(method = "handleKeybinds", at = @At("HEAD"))
+    private void easyFreecam$blockUnsafeInventoryActions(CallbackInfo ci) {
+        if (!FreecamController.isEnabled() || FreecamController.shouldAllowInventoryActions()) {
+            return;
+        }
+
+        Minecraft client = (Minecraft)(Object)this;
+        while (client.options.keyDrop.consumeClick()) {
+            // Drain queued drops before vanilla can apply them to the real player.
+        }
+        while (client.options.keySwapOffhand.consumeClick()) {
+            // Drain queued swaps before vanilla can apply them to the real player.
+        }
+    }
+
     @Inject(method = "disconnect(Lnet/minecraft/client/gui/screens/Screen;ZZ)V", at = @At("HEAD"))
     private void easyFreecam$disableFreecamBeforeDisconnect(Screen screen, boolean transferring, boolean skippingPackCleanup, CallbackInfo ci) {
         FreecamController.handleLevelUnload((Minecraft)(Object)this);

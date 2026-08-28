@@ -4,6 +4,7 @@ import dev.elpu7.easyFreecam.client.FreecamController;
 import net.minecraft.client.Camera;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.world.entity.Entity;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -29,5 +30,18 @@ public abstract class CameraMixin {
         Camera camera = (Camera)(Object)this;
         camera.setLevel(client.level);
         camera.setEntity(freecamEntity);
+    }
+
+    @Inject(method = "extractRenderState", at = @At("TAIL"))
+    private void easyFreecam$disableSmartCullInsideBlocks(CameraRenderState renderState, float partialTick, CallbackInfo ci) {
+        Minecraft client = Minecraft.getInstance();
+        if (!FreecamController.isEnabled() || client.level == null) {
+            return;
+        }
+
+        Camera camera = (Camera)(Object)this;
+        if (client.level.getBlockState(camera.blockPosition()).isSolidRender()) {
+            renderState.smartCull = false;
+        }
     }
 }

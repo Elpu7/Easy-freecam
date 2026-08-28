@@ -11,7 +11,9 @@
     "GameRendererMixin",
     "GuiMixin",
     "LevelRendererMixin",
+    "LivingEntityMixin",
     "MinecraftMixin",
+    "MouseHandlerMixin",
     "MultiPlayerGameModeMixin"
   ],
   "injectors": {

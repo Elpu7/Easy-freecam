@@ -20,6 +20,11 @@ if (selectedMcProfile != null) {
 version = project.mod_version
 group = project.maven_group
 
+def expandedModVersion = project.version.toString()
+def expandedMinecraftDependency = project.minecraft_dependency.toString()
+def expandedLoaderDependency = project.loader_dependency.toString()
+def licenseArchiveName = project.archives_base_name.toString()
+
 base {
     archivesName = project.archives_base_name
 }
@@ -30,6 +35,12 @@ if (project.hasProperty("custom_build_dir")) {
 
 loom {
     splitEnvironmentSourceSets()
+
+    runs {
+        client {
+            runDir "run/${selectedMcProfile ?: 'default'}"
+        }
+    }
 
     mods {
         "easy-freecam" {
@@ -64,16 +75,16 @@ dependencies {
 }
 
 processResources {
-    inputs.property "version", project.version
-    inputs.property "minecraft_dependency", project.minecraft_dependency
-    inputs.property "loader_dependency", project.loader_dependency
-    filteringCharset "UTF-8"
+    inputs.property "version", expandedModVersion
+    inputs.property "minecraft_dependency", expandedMinecraftDependency
+    inputs.property "loader_dependency", expandedLoaderDependency
+    filteringCharset = "UTF-8"
 
     filesMatching("fabric.mod.json") {
         expand(
-            "version": project.version,
-            "minecraft_dependency": project.minecraft_dependency,
-            "loader_dependency": project.loader_dependency
+            "version": expandedModVersion,
+            "minecraft_dependency": expandedMinecraftDependency,
+            "loader_dependency": expandedLoaderDependency
         )
     }
 }
@@ -95,9 +106,14 @@ java {
 
 jar {
     from("LICENSE.txt") {
-        rename { "${it}_${project.archives_base_name}"}
+        rename { "${it}_${licenseArchiveName}"}
     }
 }
+
+def versionSpecificClientSources = selectedMcProfile == "mc26_1_2"
+    ? "src/client-26.1.2/java"
+    : "src/client-26.2/java"
+sourceSets.client.java.srcDir(versionSpecificClientSources)
 
 // configure the maven publication
 publishing {

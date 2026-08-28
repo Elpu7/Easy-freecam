@@ -4,15 +4,20 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParseException;
 import net.fabricmc.loader.api.FabricLoader;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
+import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 
 public final class EasyFreecamConfigManager {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
+    private static final Logger LOGGER = LoggerFactory.getLogger("easy-freecam");
     private static final Path CONFIG_PATH = FabricLoader.getInstance()
         .getConfigDir()
         .resolve("easy-freecam.json");
@@ -35,19 +40,43 @@ public final class EasyFreecamConfigManager {
             } else {
                 config = sanitize(loadedConfig);
             }
-        } catch (IOException | JsonParseException exception) {
+        } catch (JsonParseException exception) {
+            LOGGER.error("Failed to parse Easy Freecam config; using defaults", exception);
+            boolean backupCreated = backupBrokenConfig();
+            config = new EasyFreecamConfig();
+            if (backupCreated) {
+                save();
+            }
+        } catch (IOException exception) {
+            LOGGER.error("Failed to read Easy Freecam config; using defaults without overwriting it", exception);
             config = new EasyFreecamConfig();
         }
     }
 
-    public static void save() {
+    public static boolean save() {
+        Path temporaryPath = null;
+
         try {
             Files.createDirectories(CONFIG_PATH.getParent());
-            try (Writer writer = Files.newBufferedWriter(CONFIG_PATH)) {
+            temporaryPath = Files.createTempFile(CONFIG_PATH.getParent(), "easy-freecam-", ".tmp");
+            try (Writer writer = Files.newBufferedWriter(temporaryPath)) {
                 GSON.toJson(config, writer);
             }
-        } catch (IOException exception) {
-            throw new RuntimeException("Failed to save easy-freecam config", exception);
+
+            moveTemporaryConfig(temporaryPath);
+            temporaryPath = null;
+            return true;
+        } catch (IOException | RuntimeException exception) {
+            LOGGER.error("Failed to save Easy Freecam config", exception);
+            return false;
+        } finally {
+            if (temporaryPath != null) {
+                try {
+                    Files.deleteIfExists(temporaryPath);
+                } catch (IOException exception) {
+                    LOGGER.warn("Failed to remove temporary Easy Freecam config {}", temporaryPath, exception);
+                }
+            }
         }
     }
 
@@ -68,5 +97,33 @@ public final class EasyFreecamConfigManager {
         }
 
         return Math.clamp(value, min, max);
+    }
+
+    private static void moveTemporaryConfig(Path temporaryPath) throws IOException {
+        try {
+            Files.move(
+                temporaryPath,
+                CONFIG_PATH,
+                StandardCopyOption.ATOMIC_MOVE,
+                StandardCopyOption.REPLACE_EXISTING
+            );
+        } catch (AtomicMoveNotSupportedException exception) {
+            Files.move(temporaryPath, CONFIG_PATH, StandardCopyOption.REPLACE_EXISTING);
+        }
+    }
+
+    private static boolean backupBrokenConfig() {
+        Path backupPath = CONFIG_PATH.resolveSibling(
+            CONFIG_PATH.getFileName() + ".broken-" + System.currentTimeMillis()
+        );
+
+        try {
+            Files.move(CONFIG_PATH, backupPath);
+            LOGGER.warn("Moved broken Easy Freecam config to {}", backupPath);
+            return true;
+        } catch (IOException exception) {
+            LOGGER.error("Failed to back up broken Easy Freecam config", exception);
+            return false;
+        }
     }
 }

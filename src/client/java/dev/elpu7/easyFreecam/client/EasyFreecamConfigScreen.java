@@ -1,11 +1,14 @@
 package dev.elpu7.easyFreecam.client;
 
 import net.minecraft.client.OptionInstance;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.Options;
 import net.minecraft.client.gui.components.AbstractSliderButton;
-import net.minecraft.client.gui.components.OptionsList;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.layouts.LinearLayout;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.options.OptionsSubScreen;
+import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.util.Mth;
@@ -58,6 +61,20 @@ public final class EasyFreecamConfigScreen extends OptionsSubScreen {
             ),
             null
         );
+        list.addSmall(
+            createBooleanOption(
+                "option.easy-freecam.smooth_camera_movement",
+                "tooltip.easy-freecam.smooth_camera_movement",
+                config.smoothCameraMovement,
+                value -> config.smoothCameraMovement = value
+            ),
+            createBooleanOption(
+                "option.easy-freecam.adjust_speed_with_mouse_wheel",
+                "tooltip.easy-freecam.adjust_speed_with_mouse_wheel",
+                config.adjustSpeedWithMouseWheel,
+                value -> config.adjustSpeedWithMouseWheel = value
+            )
+        );
 
         list.addHeader(Component.translatable("option.easy-freecam.header.visual"));
         list.addSmall(
@@ -85,12 +102,69 @@ public final class EasyFreecamConfigScreen extends OptionsSubScreen {
             ),
             null
         );
+
+        list.addHeader(Component.translatable("option.easy-freecam.header.interactions"));
+        list.addSmall(
+            createBooleanOption(
+                "option.easy-freecam.allow_food",
+                "tooltip.easy-freecam.allow_food",
+                config.allowFood,
+                value -> config.allowFood = value
+            ),
+            createBooleanOption(
+                "option.easy-freecam.allow_drinks",
+                "tooltip.easy-freecam.allow_drinks",
+                config.allowDrinks,
+                value -> config.allowDrinks = value
+            )
+        );
+        list.addSmall(
+            createBooleanOption(
+                "option.easy-freecam.allow_elytra_rockets",
+                "tooltip.easy-freecam.allow_elytra_rockets",
+                config.allowElytraRockets,
+                value -> config.allowElytraRockets = value
+            ),
+            createBooleanOption(
+                "option.easy-freecam.allow_inventory_actions",
+                "tooltip.easy-freecam.allow_inventory_actions",
+                config.allowInventoryActions,
+                value -> config.allowInventoryActions = value
+            )
+        );
+    }
+
+    @Override
+    protected void addFooter() {
+        LinearLayout footer = LinearLayout.horizontal().spacing(8);
+        footer.addChild(Button.builder(
+            Component.translatable("button.easy-freecam.reset_defaults"),
+            button -> resetToDefaults()
+        ).width(150).build());
+        footer.addChild(Button.builder(
+            CommonComponents.GUI_DONE,
+            button -> onClose()
+        ).width(150).build());
+        layout.addToFooter(footer);
     }
 
     @Override
     public void removed() {
-        EasyFreecamConfigManager.save();
+        if (!EasyFreecamConfigManager.save()) {
+            Minecraft client = Minecraft.getInstance();
+            if (client.player != null) {
+                client.player.sendOverlayMessage(Component.translatable("message.easy-freecam.config_save_failed"));
+            }
+        }
         super.removed();
+    }
+
+    private void resetToDefaults() {
+        config.resetToDefaults();
+        MinecraftCompatibility.openScreen(
+            Minecraft.getInstance(),
+            new EasyFreecamConfigScreen(lastScreen, options)
+        );
     }
 
     private OptionInstance<Boolean> createBooleanOption(String key, String tooltipKey, boolean initialValue, java.util.function.Consumer<Boolean> consumer) {

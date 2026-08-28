@@ -51,18 +51,8 @@ public abstract class ClientPlayerEntityMixin {
             return;
         }
 
-        LocalPlayer player = (LocalPlayer)(Object)this;
         if (health <= 0.0F) {
             FreecamController.disableImmediately(client);
-            return;
-        }
-
-        if (!FreecamController.shouldDisableOnDamage()) {
-            return;
-        }
-
-        if (health < player.getHealth()) {
-            FreecamController.disableDueToDamage(client);
         }
     }
 

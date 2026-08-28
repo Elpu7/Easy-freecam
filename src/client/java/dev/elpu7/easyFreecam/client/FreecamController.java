@@ -7,13 +7,19 @@ import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Options;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.Marker;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.player.Input;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.ItemUseAnimation;
+import net.minecraft.world.item.component.Consumable;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 import org.lwjgl.glfw.GLFW;
@@ -21,6 +27,13 @@ import com.mojang.blaze3d.platform.InputConstants;
 
 public final class FreecamController {
     private static final float LOOK_MULTIPLIER = 0.15F;
+    private static final double MIN_SPEED_MULTIPLIER = 0.25D;
+    private static final double MAX_SPEED_MULTIPLIER = 8.0D;
+    private static final double SPEED_MULTIPLIER_STEP = 1.25D;
+    private static final double SMOOTH_ACCELERATION = 0.35D;
+    private static final double SMOOTH_DECELERATION = 0.5D;
+    private static final double MIN_CAMERA_VELOCITY_SQUARED = 1.0E-8D;
+    private static final Input CROUCHING_INPUT = new Input(false, false, false, false, false, true, false);
 
     private static final KeyMapping.Category KEY_CATEGORY = KeyMapping.Category.register(
         Identifier.fromNamespaceAndPath("easy-freecam", "controls")
@@ -36,11 +49,14 @@ public final class FreecamController {
     private static boolean enabled;
     private static Vec3 position = Vec3.ZERO;
     private static Vec3 previousPosition = Vec3.ZERO;
+    private static Vec3 cameraVelocity = Vec3.ZERO;
     private static float yaw;
     private static float pitch;
     private static boolean sprintToggled;
     private static boolean sprintKeyWasDown;
-    private static boolean previousChunkCullingState;
+    private static boolean playerWasCrouching;
+    private static double speedMultiplier = 1.0D;
+    private static double scrollAccumulator;
     private static Entity previousCameraEntity;
     private static Marker freecamCameraEntity;
 
@@ -64,7 +80,7 @@ public final class FreecamController {
         }
 
         if (client.player == null || client.level == null) {
-            clearState(client, false, false, false);
+            clearState(client, false, false);
             return;
         }
 
@@ -97,27 +113,29 @@ public final class FreecamController {
         }
 
         LocalPlayer player = client.player;
+        playerWasCrouching = player.isShiftKeyDown();
+        MinecraftCompatibility.onFreecamEnabled(client);
         enabled = true;
         position = new Vec3(player.getX(), player.getEyeY(), player.getZ());
         previousPosition = position;
+        cameraVelocity = Vec3.ZERO;
         yaw = player.getYRot();
         pitch = player.getXRot();
         sprintToggled = false;
         sprintKeyWasDown = client.options.keySprint.isDown();
-        previousChunkCullingState = client.smartCull;
-        client.smartCull = false;
+        speedMultiplier = 1.0D;
+        scrollAccumulator = 0.0D;
         previousCameraEntity = client.getCameraEntity();
         sanitizePlayerInput(player);
         stopDestroyBlock(client);
         freecamCameraEntity = createCameraEntity(client);
         syncCameraEntity(client);
         setMainCameraEntity(client, freecamCameraEntity);
-        refreshLevelRenderer(client);
         sendStatus(player, true);
     }
 
     private static void disable(Minecraft client, boolean notifyPlayer) {
-        clearState(client, notifyPlayer, true, true);
+        clearState(client, notifyPlayer, true);
     }
 
     public static void handleLevelUnload(Minecraft client) {
@@ -125,20 +143,24 @@ public final class FreecamController {
             return;
         }
 
-        clearState(client, false, true, false);
+        clearState(client, false, true);
     }
 
-    private static void clearState(Minecraft client, boolean notifyPlayer, boolean restoreCamera, boolean refreshRenderer) {
+    private static void clearState(Minecraft client, boolean notifyPlayer, boolean restoreCamera) {
         enabled = false;
+        MinecraftCompatibility.onFreecamDisabled(client);
         sprintToggled = false;
         sprintKeyWasDown = false;
+        playerWasCrouching = false;
+        cameraVelocity = Vec3.ZERO;
+        speedMultiplier = 1.0D;
+        scrollAccumulator = 0.0D;
         stopDestroyBlock(client);
-        client.smartCull = previousChunkCullingState;
 
         if (restoreCamera) {
-            restoreCameraEntity(client, refreshRenderer);
+            restoreCameraEntity(client);
         } else {
-            discardCameraState(client, refreshRenderer);
+            discardCameraState();
         }
 
         if (notifyPlayer && client.player != null) {
@@ -150,9 +172,13 @@ public final class FreecamController {
         LocalPlayer player = client.player;
         Options options = client.options;
         EasyFreecamConfig config = EasyFreecamConfigManager.getConfig();
+        if (!config.adjustSpeedWithMouseWheel) {
+            speedMultiplier = 1.0D;
+            scrollAccumulator = 0.0D;
+        }
         previousPosition = position;
-        double horizontalSpeed = player.getAbilities().getFlyingSpeed() * config.horizontalSpeed;
-        double verticalSpeed = player.getAbilities().getFlyingSpeed() * config.verticalSpeed;
+        double horizontalSpeed = player.getAbilities().getFlyingSpeed() * config.horizontalSpeed * speedMultiplier;
+        double verticalSpeed = player.getAbilities().getFlyingSpeed() * config.verticalSpeed * speedMultiplier;
 
         if (sprintToggled) {
             horizontalSpeed *= config.sprintMultiplier;
@@ -187,17 +213,28 @@ public final class FreecamController {
             movement = movement.add(0.0D, -verticalSpeed, 0.0D);
         }
 
-        if (movement.lengthSqr() > 0.0D) {
-            Vec3 horizontalMovement = new Vec3(movement.x, 0.0D, movement.z);
-            Vec3 verticalMovement = new Vec3(0.0D, movement.y, 0.0D);
-
-            if (horizontalMovement.lengthSqr() > 0.0D) {
-                position = position.add(horizontalMovement.normalize().scale(horizontalSpeed));
-            }
-            if (verticalMovement.lengthSqr() > 0.0D) {
-                position = position.add(verticalMovement);
-            }
+        Vec3 targetMovement = Vec3.ZERO;
+        Vec3 horizontalMovement = new Vec3(movement.x, 0.0D, movement.z);
+        if (horizontalMovement.lengthSqr() > 0.0D) {
+            targetMovement = targetMovement.add(horizontalMovement.normalize().scale(horizontalSpeed));
         }
+        if (movement.y != 0.0D) {
+            targetMovement = targetMovement.add(0.0D, movement.y, 0.0D);
+        }
+
+        if (config.smoothCameraMovement) {
+            double smoothing = targetMovement.lengthSqr() > 0.0D
+                ? SMOOTH_ACCELERATION
+                : SMOOTH_DECELERATION;
+            cameraVelocity = cameraVelocity.lerp(targetMovement, smoothing);
+            if (cameraVelocity.lengthSqr() < MIN_CAMERA_VELOCITY_SQUARED) {
+                cameraVelocity = Vec3.ZERO;
+            }
+        } else {
+            cameraVelocity = targetMovement;
+        }
+
+        position = position.add(cameraVelocity);
     }
 
     private static void sendStatus(LocalPlayer player, boolean enabled) {
@@ -236,8 +273,44 @@ public final class FreecamController {
     }
 
     public static void clearPlayerInput(LocalPlayer player) {
+        setPlayerInput(player, Input.EMPTY);
+    }
+
+    public static boolean handleMouseScroll(Minecraft client, long window, double verticalOffset) {
+        if (!enabled
+            || !EasyFreecamConfigManager.getConfig().adjustSpeedWithMouseWheel
+            || client.player == null
+            || client.level == null
+            || MinecraftCompatibility.hasScreenOpen(client)
+            || client.getWindow().handle() != window) {
+            return false;
+        }
+
+        scrollAccumulator += verticalOffset;
+        int steps = 0;
+        while (scrollAccumulator >= 1.0D) {
+            scrollAccumulator -= 1.0D;
+            steps++;
+        }
+        while (scrollAccumulator <= -1.0D) {
+            scrollAccumulator += 1.0D;
+            steps--;
+        }
+
+        if (steps != 0) {
+            speedMultiplier = Mth.clamp(
+                speedMultiplier * Math.pow(SPEED_MULTIPLIER_STEP, steps),
+                MIN_SPEED_MULTIPLIER,
+                MAX_SPEED_MULTIPLIER
+            );
+        }
+
+        return true;
+    }
+
+    private static void setPlayerInput(LocalPlayer player, Input input) {
         ClientInputAccessor inputAccessor = (ClientInputAccessor)player.input;
-        inputAccessor.easyFreecam$setKeyPresses(Input.EMPTY);
+        inputAccessor.easyFreecam$setKeyPresses(input);
         inputAccessor.easyFreecam$setMoveVector(Vec2.ZERO);
     }
 
@@ -252,6 +325,11 @@ public final class FreecamController {
     }
 
     public static void sanitizePlayerInput(LocalPlayer player) {
+        if (player.isFallFlying()) {
+            suppressMovementInput(player);
+            return;
+        }
+
         if (shouldFreezeWalkingMovement(player)) {
             freezePlayerMovement(player);
             return;
@@ -263,29 +341,27 @@ public final class FreecamController {
     }
 
     public static boolean shouldFreezeWalkingMovement(LocalPlayer player) {
-        return !player.isPassenger();
+        return !player.isPassenger() && !player.isFallFlying();
+    }
+
+    private static void suppressMovementInput(LocalPlayer player) {
+        clearPlayerInput(player);
+        player.setJumping(false);
+        player.xxa = 0.0F;
+        player.yya = 0.0F;
+        player.zza = 0.0F;
     }
 
     public static void freezePlayerMovement(LocalPlayer player) {
-        clearPlayerInput(player);
+        setPlayerInput(player, playerWasCrouching ? CROUCHING_INPUT : Input.EMPTY);
         player.applyInput();
         player.xxa = 0.0F;
         player.yya = 0.0F;
         player.zza = 0.0F;
-        player.setShiftKeyDown(false);
+        player.setShiftKeyDown(playerWasCrouching);
         player.setJumping(false);
-
-        Vec3 velocity = player.getDeltaMovement();
-        double verticalVelocity = shouldPreserveVerticalVelocity(player) ? velocity.y : 0.0D;
-        player.setDeltaMovement(0.0D, verticalVelocity, 0.0D);
+        // Preserve velocity from currents, knockback, gravity, and other world physics.
         player.setSprinting(false);
-    }
-
-    private static boolean shouldPreserveVerticalVelocity(LocalPlayer player) {
-        return !player.getAbilities().flying
-            && !player.isSwimming()
-            && !player.onClimbable()
-            && !player.isFallFlying();
     }
 
     public static boolean shouldHideHand() {
@@ -298,6 +374,28 @@ public final class FreecamController {
 
     public static boolean shouldDisableOnDamage() {
         return EasyFreecamConfigManager.getConfig().disableOnDamage;
+    }
+
+    public static boolean shouldAllowInventoryActions() {
+        return EasyFreecamConfigManager.getConfig().allowInventoryActions;
+    }
+
+    public static boolean isSafeItemUse(Player player, InteractionHand hand) {
+        EasyFreecamConfig config = EasyFreecamConfigManager.getConfig();
+        ItemStack stack = player.getItemInHand(hand);
+
+        Consumable consumable = stack.get(DataComponents.CONSUMABLE);
+        if (consumable != null && consumable.animation() == ItemUseAnimation.DRINK) {
+            return config.allowDrinks;
+        }
+
+        if (stack.has(DataComponents.FOOD)) {
+            return config.allowFood;
+        }
+
+        return config.allowElytraRockets
+            && player.isFallFlying()
+            && stack.getItem() == Items.FIREWORK_ROCKET;
     }
 
     public static void disableImmediately(Minecraft client) {
@@ -341,12 +439,11 @@ public final class FreecamController {
             return;
         }
 
-        client.gameRenderer.mainCamera().setLevel(client.level);
-        client.gameRenderer.mainCamera().setEntity(cameraEntity);
+        MinecraftCompatibility.setMainCameraEntity(client, cameraEntity);
     }
 
     private static Marker createCameraEntity(Minecraft client) {
-        Marker cameraEntity = new Marker(EntityTypes.MARKER, client.level);
+        Marker cameraEntity = MinecraftCompatibility.createCameraEntity(client);
         cameraEntity.noPhysics = true;
         cameraEntity.setNoGravity(true);
         cameraEntity.setSilent(true);
@@ -370,7 +467,7 @@ public final class FreecamController {
         }
     }
 
-    private static void restoreCameraEntity(Minecraft client, boolean refreshRenderer) {
+    private static void restoreCameraEntity(Minecraft client) {
         Entity restoredCamera = getRestoredCameraEntity(client);
 
         if (restoredCamera != null) {
@@ -378,7 +475,7 @@ public final class FreecamController {
             setMainCameraEntity(client, restoredCamera);
         }
 
-        discardCameraState(client, refreshRenderer);
+        discardCameraState();
     }
 
     private static Entity getRestoredCameraEntity(Minecraft client) {
@@ -400,19 +497,9 @@ public final class FreecamController {
             && !entity.isRemoved();
     }
 
-    private static void discardCameraState(Minecraft client, boolean refreshRenderer) {
+    private static void discardCameraState() {
         previousCameraEntity = null;
         freecamCameraEntity = null;
-
-        if (refreshRenderer) {
-            refreshLevelRenderer(client);
-        }
-    }
-
-    private static void refreshLevelRenderer(Minecraft client) {
-        if (client.levelExtractor != null) {
-            client.levelExtractor.allChanged();
-        }
     }
 
     private static void stopDestroyBlock(Minecraft client) {
