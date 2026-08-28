@@ -1,6 +1,5 @@
 Easy Freecam is a small client-side Fabric mod that lets you toggle a spectator-style freecam with a normal keybind instead of using commands or changing gamemodes.
-
-It gives you a smooth free camera that can move around the world with normal movement controls while your actual player remains controlled by normal world physics.
+It gives you a smooth free camera that can move around the world with normal movement controls.
 
 ## Features
 
@@ -9,13 +8,9 @@ It gives you a smooth free camera that can move around the world with normal mov
 - Enable spectator-style smooth camera acceleration and deceleration
 - Toggle sprint for faster freecam movement
 - Configure horizontal speed, vertical speed, and sprint multiplier
-- Temporarily adjust freecam speed from `0.25x` to `8x` with the mouse wheel; the multiplier resets on each activation
+- Temporarily adjust freecam speed from `0.25x` to `8x` with the mouse wheel
 - Toggle hand visibility and player model visibility while freecam is active
-- Safely eat, drink, or boost an active elytra flight while other world interactions stay blocked
-- Blocks item dropping, offhand swapping, and pick-block actions by default; Q/F actions can be enabled in the settings
-- Optionally disable freecam automatically when taking damage
 - Open the config screen through ModMenu
-- Prevents freecam input from moving your real player while preserving currents, knockback, gravity, and elytra flight
 - Client-side only
 
 ## Default keybinds
