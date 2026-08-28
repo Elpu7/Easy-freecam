@@ -13,7 +13,11 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.util.Mth;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
+import java.util.function.BooleanSupplier;
+import java.util.function.DoubleSupplier;
 
 public final class EasyFreecamConfigScreen extends OptionsSubScreen {
     private static final Component TITLE = Component.translatable("screen.easy-freecam.config");
@@ -23,6 +27,7 @@ public final class EasyFreecamConfigScreen extends OptionsSubScreen {
     private static final double MAX_SPRINT_MULTIPLIER = 8.0D;
 
     private final EasyFreecamConfig config;
+    private final List<Runnable> resetters = new ArrayList<>();
 
     public EasyFreecamConfigScreen(Screen lastScreen, Options options) {
         super(lastScreen, options, TITLE);
@@ -33,30 +38,30 @@ public final class EasyFreecamConfigScreen extends OptionsSubScreen {
     protected void addOptions() {
         list.addHeader(Component.translatable("option.easy-freecam.header.movement"));
         list.addSmall(
-            new DoubleSlider(
+            createDoubleSlider(
                 "option.easy-freecam.horizontal_speed",
                 "tooltip.easy-freecam.horizontal_speed",
                 MIN_SPEED,
                 MAX_SPEED,
-                config.horizontalSpeed,
+                () -> config.horizontalSpeed,
                 value -> config.horizontalSpeed = value
             ),
-            new DoubleSlider(
+            createDoubleSlider(
                 "option.easy-freecam.vertical_speed",
                 "tooltip.easy-freecam.vertical_speed",
                 MIN_SPEED,
                 MAX_SPEED,
-                config.verticalSpeed,
+                () -> config.verticalSpeed,
                 value -> config.verticalSpeed = value
             )
         );
         list.addSmall(
-            new DoubleSlider(
+            createDoubleSlider(
                 "option.easy-freecam.sprint_multiplier",
                 "tooltip.easy-freecam.sprint_multiplier",
                 MIN_SPRINT_MULTIPLIER,
                 MAX_SPRINT_MULTIPLIER,
-                config.sprintMultiplier,
+                () -> config.sprintMultiplier,
                 value -> config.sprintMultiplier = value
             ),
             null
@@ -65,13 +70,13 @@ public final class EasyFreecamConfigScreen extends OptionsSubScreen {
             createBooleanOption(
                 "option.easy-freecam.smooth_camera_movement",
                 "tooltip.easy-freecam.smooth_camera_movement",
-                config.smoothCameraMovement,
+                () -> config.smoothCameraMovement,
                 value -> config.smoothCameraMovement = value
             ),
             createBooleanOption(
                 "option.easy-freecam.adjust_speed_with_mouse_wheel",
                 "tooltip.easy-freecam.adjust_speed_with_mouse_wheel",
-                config.adjustSpeedWithMouseWheel,
+                () -> config.adjustSpeedWithMouseWheel,
                 value -> config.adjustSpeedWithMouseWheel = value
             )
         );
@@ -81,13 +86,13 @@ public final class EasyFreecamConfigScreen extends OptionsSubScreen {
             createBooleanOption(
                 "option.easy-freecam.show_hand",
                 "tooltip.easy-freecam.show_hand",
-                config.showHand,
+                () -> config.showHand,
                 value -> config.showHand = value
             ),
             createBooleanOption(
                 "option.easy-freecam.show_player",
                 "tooltip.easy-freecam.show_player",
-                config.showPlayer,
+                () -> config.showPlayer,
                 value -> config.showPlayer = value
             )
         );
@@ -97,7 +102,7 @@ public final class EasyFreecamConfigScreen extends OptionsSubScreen {
             createBooleanOption(
                 "option.easy-freecam.disable_on_damage",
                 "tooltip.easy-freecam.disable_on_damage",
-                config.disableOnDamage,
+                () -> config.disableOnDamage,
                 value -> config.disableOnDamage = value
             ),
             null
@@ -108,13 +113,13 @@ public final class EasyFreecamConfigScreen extends OptionsSubScreen {
             createBooleanOption(
                 "option.easy-freecam.allow_food",
                 "tooltip.easy-freecam.allow_food",
-                config.allowFood,
+                () -> config.allowFood,
                 value -> config.allowFood = value
             ),
             createBooleanOption(
                 "option.easy-freecam.allow_drinks",
                 "tooltip.easy-freecam.allow_drinks",
-                config.allowDrinks,
+                () -> config.allowDrinks,
                 value -> config.allowDrinks = value
             )
         );
@@ -122,13 +127,13 @@ public final class EasyFreecamConfigScreen extends OptionsSubScreen {
             createBooleanOption(
                 "option.easy-freecam.allow_elytra_rockets",
                 "tooltip.easy-freecam.allow_elytra_rockets",
-                config.allowElytraRockets,
+                () -> config.allowElytraRockets,
                 value -> config.allowElytraRockets = value
             ),
             createBooleanOption(
                 "option.easy-freecam.allow_inventory_actions",
                 "tooltip.easy-freecam.allow_inventory_actions",
-                config.allowInventoryActions,
+                () -> config.allowInventoryActions,
                 value -> config.allowInventoryActions = value
             )
         );
@@ -161,19 +166,43 @@ public final class EasyFreecamConfigScreen extends OptionsSubScreen {
 
     private void resetToDefaults() {
         config.resetToDefaults();
-        MinecraftCompatibility.openScreen(
-            Minecraft.getInstance(),
-            new EasyFreecamConfigScreen(lastScreen, options)
-        );
+        resetters.forEach(Runnable::run);
     }
 
-    private OptionInstance<Boolean> createBooleanOption(String key, String tooltipKey, boolean initialValue, java.util.function.Consumer<Boolean> consumer) {
-        return OptionInstance.createBoolean(
+    private DoubleSlider createDoubleSlider(
+        String key,
+        String tooltipKey,
+        double minValue,
+        double maxValue,
+        DoubleSupplier currentValue,
+        java.util.function.DoubleConsumer consumer
+    ) {
+        DoubleSlider slider = new DoubleSlider(
+            key,
+            tooltipKey,
+            minValue,
+            maxValue,
+            currentValue.getAsDouble(),
+            consumer
+        );
+        resetters.add(() -> slider.setActualValue(currentValue.getAsDouble()));
+        return slider;
+    }
+
+    private OptionInstance<Boolean> createBooleanOption(
+        String key,
+        String tooltipKey,
+        BooleanSupplier currentValue,
+        java.util.function.Consumer<Boolean> consumer
+    ) {
+        OptionInstance<Boolean> option = OptionInstance.createBoolean(
             key,
             OptionInstance.cachedConstantTooltip(Component.translatable(tooltipKey)),
-            initialValue,
+            currentValue.getAsBoolean(),
             consumer::accept
         );
+        resetters.add(() -> option.set(currentValue.getAsBoolean()));
+        return option;
     }
 
     private static final class DoubleSlider extends AbstractSliderButton {
@@ -217,6 +246,12 @@ public final class EasyFreecamConfigScreen extends OptionsSubScreen {
         private double getActualValue() {
             double actualValue = minValue + value * (maxValue - minValue);
             return Math.round(actualValue * 10.0D) / 10.0D;
+        }
+
+        private void setActualValue(double actualValue) {
+            value = toSliderValue(actualValue, minValue, maxValue);
+            updateMessage();
+            applyValue();
         }
 
         private MutableComponent buildMessage() {

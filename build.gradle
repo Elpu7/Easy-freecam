@@ -110,11 +110,6 @@ jar {
     }
 }
 
-def versionSpecificClientSources = selectedMcProfile == "mc26_1_2"
-    ? "src/client-26.1.2/java"
-    : "src/client-26.2/java"
-sourceSets.client.java.srcDir(versionSpecificClientSources)
-
 // configure the maven publication
 publishing {
     publications {
