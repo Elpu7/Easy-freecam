@@ -25,6 +25,5 @@ It gives you a smooth free camera that can move around the world with normal mov
 ## Requirements
 
 - [Fabric API](https://modrinth.com/mod/fabric-api)
-
 - [Mod Menu](https://modrinth.com/mod/modmenu)
 (optional)
