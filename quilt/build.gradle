@@ -9,8 +9,6 @@ base {
     archivesName = rootProject.archives_base_name
 }
 
-def quiltRuntimeModFiles = configurations.create('quiltRuntimeModFiles')
-
 sourceSets {
     main {
         java.srcDirs = [
@@ -54,10 +52,6 @@ repositories {
 dependencies {
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
     implementation "org.quiltmc:quilt-loader:${project.quilt_loader_version}"
-    implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
-    add('quiltRuntimeModFiles', "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}") {
-        transitive = false
-    }
 
     // Fabric Loom does not read Quilt Loader's installer metadata. Mirror the
     // libraries declared by Quilt Loader 0.30.1 for development runs only.
@@ -112,11 +106,7 @@ tasks.named('runClient').configure {
     dependsOn tasks.named('jar')
 
     doFirst {
-        def runtimeModPaths = [
-            tasks.named('jar').get().archiveFile.get().asFile,
-            quiltRuntimeModFiles.singleFile
-        ]
-        systemProperty 'loader.addMods', runtimeModPaths.collect { it.absolutePath }.join(File.pathSeparator)
+        systemProperty 'loader.addMods', tasks.named('jar').get().archiveFile.get().asFile.absolutePath
     }
 }
 

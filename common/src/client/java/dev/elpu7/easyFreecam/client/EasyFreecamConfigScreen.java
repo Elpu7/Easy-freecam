@@ -5,6 +5,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.Options;
 import net.minecraft.client.gui.components.AbstractSliderButton;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.layouts.GridLayout;
 import net.minecraft.client.gui.layouts.LinearLayout;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.options.OptionsSubScreen;
@@ -35,9 +36,13 @@ public final class EasyFreecamConfigScreen extends OptionsSubScreen {
     }
 
     @Override
-    protected void addOptions() {
-        list.addHeader(Component.translatable("option.easy-freecam.header.movement"));
-        list.addSmall(
+    protected void addContents() {
+        resetters.clear();
+
+        GridLayout optionsGrid = new GridLayout().columnSpacing(8).rowSpacing(4);
+        GridLayout.RowHelper rows = optionsGrid.createRowHelper(2);
+
+        rows.addChild(
             createDoubleSlider(
                 "option.easy-freecam.horizontal_speed",
                 "tooltip.easy-freecam.horizontal_speed",
@@ -45,7 +50,9 @@ public final class EasyFreecamConfigScreen extends OptionsSubScreen {
                 MAX_SPEED,
                 () -> config.horizontalSpeed,
                 value -> config.horizontalSpeed = value
-            ),
+            )
+        );
+        rows.addChild(
             createDoubleSlider(
                 "option.easy-freecam.vertical_speed",
                 "tooltip.easy-freecam.vertical_speed",
@@ -55,7 +62,7 @@ public final class EasyFreecamConfigScreen extends OptionsSubScreen {
                 value -> config.verticalSpeed = value
             )
         );
-        list.addSmall(
+        rows.addChild(
             createDoubleSlider(
                 "option.easy-freecam.sprint_multiplier",
                 "tooltip.easy-freecam.sprint_multiplier",
@@ -63,80 +70,90 @@ public final class EasyFreecamConfigScreen extends OptionsSubScreen {
                 MAX_SPRINT_MULTIPLIER,
                 () -> config.sprintMultiplier,
                 value -> config.sprintMultiplier = value
-            ),
-            null
+            )
         );
-        list.addSmall(
+        rows.addChild(
             createBooleanOption(
                 "option.easy-freecam.smooth_camera_movement",
                 "tooltip.easy-freecam.smooth_camera_movement",
                 () -> config.smoothCameraMovement,
                 value -> config.smoothCameraMovement = value
-            ),
+            ).createButton(options)
+        );
+        rows.addChild(
             createBooleanOption(
                 "option.easy-freecam.adjust_speed_with_mouse_wheel",
                 "tooltip.easy-freecam.adjust_speed_with_mouse_wheel",
                 () -> config.adjustSpeedWithMouseWheel,
                 value -> config.adjustSpeedWithMouseWheel = value
-            )
+            ).createButton(options)
         );
-
-        list.addHeader(Component.translatable("option.easy-freecam.header.visual"));
-        list.addSmall(
+        rows.addChild(
             createBooleanOption(
                 "option.easy-freecam.show_hand",
                 "tooltip.easy-freecam.show_hand",
                 () -> config.showHand,
                 value -> config.showHand = value
-            ),
+            ).createButton(options)
+        );
+        rows.addChild(
             createBooleanOption(
                 "option.easy-freecam.show_player",
                 "tooltip.easy-freecam.show_player",
                 () -> config.showPlayer,
                 value -> config.showPlayer = value
-            )
+            ).createButton(options)
         );
-
-        list.addHeader(Component.translatable("option.easy-freecam.header.safety"));
-        list.addSmall(
+        rows.addChild(
             createBooleanOption(
                 "option.easy-freecam.disable_on_damage",
                 "tooltip.easy-freecam.disable_on_damage",
                 () -> config.disableOnDamage,
                 value -> config.disableOnDamage = value
-            ),
-            null
+            ).createButton(options)
         );
-
-        list.addHeader(Component.translatable("option.easy-freecam.header.interactions"));
-        list.addSmall(
+        rows.addChild(
             createBooleanOption(
                 "option.easy-freecam.allow_food",
                 "tooltip.easy-freecam.allow_food",
                 () -> config.allowFood,
                 value -> config.allowFood = value
-            ),
+            ).createButton(options)
+        );
+        rows.addChild(
             createBooleanOption(
                 "option.easy-freecam.allow_drinks",
                 "tooltip.easy-freecam.allow_drinks",
                 () -> config.allowDrinks,
                 value -> config.allowDrinks = value
-            )
+            ).createButton(options)
         );
-        list.addSmall(
+        rows.addChild(
             createBooleanOption(
                 "option.easy-freecam.allow_elytra_rockets",
                 "tooltip.easy-freecam.allow_elytra_rockets",
                 () -> config.allowElytraRockets,
                 value -> config.allowElytraRockets = value
-            ),
+            ).createButton(options)
+        );
+        rows.addChild(
             createBooleanOption(
                 "option.easy-freecam.allow_inventory_actions",
                 "tooltip.easy-freecam.allow_inventory_actions",
                 () -> config.allowInventoryActions,
                 value -> config.allowInventoryActions = value
-            )
+            ).createButton(options)
         );
+
+        layout.addToContents(
+            optionsGrid,
+            settings -> settings.alignHorizontallyCenter().alignVerticallyMiddle()
+        );
+    }
+
+    @Override
+    protected void addOptions() {
+        // The compact grid is built in addContents() instead of a scrolling OptionsList.
     }
 
     @Override

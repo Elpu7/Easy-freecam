@@ -20,17 +20,12 @@
     },
     "intermediate_mappings": "net.fabricmc:intermediary",
     "entrypoints": {
-      "client": "dev.elpu7.easyFreecam.quilt.EasyFreecamQuiltClient",
       "modmenu": "dev.elpu7.easyFreecam.quilt.compat.EasyFreecamModMenu"
     },
     "depends": [
       {
         "id": "quilt_loader",
         "versions": "${quilt_loader_dependency}"
-      },
-      {
-        "id": "fabric-api",
-        "versions": "*"
       },
       {
         "id": "minecraft",
@@ -47,6 +42,7 @@
   },
   "mixin": [
     "easy-freecam.mixins.json",
-    "easy-freecam.client.mixins.json"
+    "easy-freecam.client.mixins.json",
+    "easy-freecam.quilt.mixins.json"
   ]
 }

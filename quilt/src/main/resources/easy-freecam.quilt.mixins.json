@@ -1,0 +1,14 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "dev.elpu7.easyFreecam.quilt.mixin.client",
+  "compatibilityLevel": "JAVA_25",
+  "client": [
+    "ClientLanguageMixin",
+    "MinecraftMixin",
+    "OptionsMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
