@@ -1,129 +1,25 @@
 plugins {
-    id 'net.fabricmc.fabric-loom' version "${loom_version}"
-    id 'maven-publish'
+    id 'base'
 }
 
-def selectedMcProfile = providers.gradleProperty("mc_profile").orNull
-if (selectedMcProfile != null) {
-    def profileFile = file("gradle/version-profiles/${selectedMcProfile}.properties")
-    if (!profileFile.exists()) {
-        throw new GradleException("Unknown mc_profile '${selectedMcProfile}'")
-    }
-
-    def profileProperties = new Properties()
-    profileFile.withInputStream { profileProperties.load(it) }
-    profileProperties.each { key, value ->
-        ext.set(key.toString(), value.toString())
-    }
-}
-
-version = project.mod_version
 group = project.maven_group
+version = project.mod_version
 
-def expandedModVersion = project.version.toString()
-def expandedMinecraftDependency = project.minecraft_dependency.toString()
-def expandedLoaderDependency = project.loader_dependency.toString()
-def licenseArchiveName = project.archives_base_name.toString()
+subprojects {
+    group = rootProject.maven_group
+    version = rootProject.mod_version
 
-base {
-    archivesName = project.archives_base_name
-}
-
-if (project.hasProperty("custom_build_dir")) {
-    layout.buildDirectory.set(file(project.custom_build_dir))
-}
-
-loom {
-    splitEnvironmentSourceSets()
-
-    runs {
-        client {
-            runDir "run/${selectedMcProfile ?: 'default'}"
-        }
-    }
-
-    mods {
-        "easy-freecam" {
-            sourceSet sourceSets.main
-            sourceSet sourceSets.client
-        }
+    if (project.hasProperty('custom_build_dir')) {
+        layout.buildDirectory.set(file("${project.custom_build_dir}/${project.name}"))
     }
 }
 
-
-repositories {
-    maven {
-        name = "Terraformers"
-        url = "https://maven.terraformersmc.com/"
-    }
-
-    // Add repositories to retrieve artifacts from in here.
-    // You should only use this when depending on other mods because
-    // Loom adds the essential maven repositories to download Minecraft and libraries from automatically.
-    // See https://docs.gradle.org/current/userguide/declaring_repositories.html
-    // for more information about repositories.
+tasks.register('buildAll') {
+    group = 'build'
+    description = 'Builds the Fabric, Quilt, and NeoForge artifacts.'
+    dependsOn subprojects.collect { "${it.path}:build" }
 }
 
-dependencies {
-    // To change the versions see the gradle.properties file
-    minecraft "com.mojang:minecraft:${project.minecraft_version}"
-    implementation "net.fabricmc:fabric-loader:${project.loader_version}"
-
-    implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
-    clientImplementation "net.fabricmc.fabric-api:fabric-key-mapping-api-v1:${project.fabric_key_mapping_version}"
-    compileOnly "com.terraformersmc:modmenu:${project.modmenu_version}"
-}
-
-processResources {
-    inputs.property "version", expandedModVersion
-    inputs.property "minecraft_dependency", expandedMinecraftDependency
-    inputs.property "loader_dependency", expandedLoaderDependency
-    filteringCharset = "UTF-8"
-
-    filesMatching("fabric.mod.json") {
-        expand(
-            "version": expandedModVersion,
-            "minecraft_dependency": expandedMinecraftDependency,
-            "loader_dependency": expandedLoaderDependency
-        )
-    }
-}
-
-tasks.withType(JavaCompile).configureEach {
-    it.options.encoding = "UTF-8"
-    it.options.release = 25
-}
-
-java {
-    // Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task
-    // if it is present.
-    // If you remove this line, sources will not be generated.
-    withSourcesJar()
-
-    sourceCompatibility = JavaVersion.VERSION_25
-    targetCompatibility = JavaVersion.VERSION_25
-}
-
-jar {
-    from("LICENSE.txt") {
-        rename { "${it}_${licenseArchiveName}"}
-    }
-}
-
-// configure the maven publication
-publishing {
-    publications {
-        create("mavenJava", MavenPublication) {
-            artifactId = project.archives_base_name
-            from components.java
-        }
-    }
-
-    // See https://docs.gradle.org/current/userguide/publishing_maven.html for information on how to set up publishing.
-    repositories {
-        // Add repositories to publish to here.
-        // Notice: This block does NOT have the same function as the block in the top level.
-        // The repositories here will be used for publishing your artifact, not for
-        // retrieving dependencies.
-    }
+tasks.named('build') {
+    dependsOn tasks.named('buildAll')
 }

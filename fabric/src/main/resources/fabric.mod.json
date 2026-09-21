@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "id": "easy-freecam",
+  "version": "${version}",
+  "name": "Easy-freecam",
+  "description": "A simple, easy-to-use Freecam mod.",
+  "authors": ["Elpu7"],
+  "contact": {
+    "homepage": "https://modrinth.com/project/easy-freecam",
+    "issues": "https://github.com/Elpu7/easy-freecam/issues",
+    "sources": "https://github.com/Elpu7/easy-freecam"
+  },
+  "license": "MIT",
+  "icon": "assets/easy-freecam/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "dev.elpu7.easyFreecam.fabric.EasyFreecamFabricClient"
+    ],
+    "modmenu": [
+      "dev.elpu7.easyFreecam.fabric.compat.EasyFreecamModMenu"
+    ]
+  },
+  "mixins": [
+    "easy-freecam.mixins.json",
+    {
+      "config": "easy-freecam.client.mixins.json",
+      "environment": "client"
+    }
+  ],
+  "depends": {
+    "fabricloader": "${loader_dependency}",
+    "fabric-api": "*",
+    "minecraft": "${minecraft_dependency}",
+    "java": ">=25"
+  },
+  "suggests": {
+    "modmenu": "*"
+  }
+}

@@ -1,0 +1,81 @@
+plugins {
+    id 'java-library'
+    id 'maven-publish'
+    id 'net.neoforged.moddev' version "${moddevgradle_version}"
+}
+
+base {
+    archivesName = rootProject.archives_base_name
+}
+
+sourceSets {
+    main {
+        java.srcDirs = [
+            rootProject.file('common/src/main/java'),
+            rootProject.file('common/src/client/java'),
+            file('src/main/java')
+        ]
+        resources.srcDirs = [
+            rootProject.file('common/src/main/resources'),
+            rootProject.file('common/src/client/resources'),
+            file('src/main/resources')
+        ]
+    }
+}
+
+neoForge {
+    version = project.neoforge_version
+
+    runs {
+        client {
+            client()
+            gameDirectory = rootProject.file('run/neoforge')
+        }
+    }
+
+    mods {
+        easy_freecam {
+            sourceSet sourceSets.main
+        }
+    }
+}
+
+processResources {
+    def replacements = [
+        mod_version: project.version,
+        minecraft_version_range: project.minecraft_version_range,
+        neoforge_version: project.neoforge_version
+    ]
+    inputs.properties replacements
+    filteringCharset = 'UTF-8'
+
+    filesMatching('META-INF/neoforge.mods.toml') {
+        expand replacements
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.release = 25
+}
+
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(25)
+    withSourcesJar()
+}
+
+jar {
+    archiveFileName = "${rootProject.archives_base_name}-${project.version}-neoforge.jar"
+    from(rootProject.file('LICENSE.txt')) {
+        rename { "${it}_${rootProject.archives_base_name}" }
+    }
+}
+
+publishing {
+    publications {
+        create('mavenJava', MavenPublication) {
+            artifactId = "${rootProject.archives_base_name}-neoforge"
+            from components.java
+        }
+    }
+}
