@@ -7,7 +7,7 @@
   "message.easy-freecam.disabled_damage": "Freecam disabled after taking damage",
   "message.easy-freecam.config_save_failed": "Could not save Easy Freecam settings. See the log for details.",
   "screen.easy-freecam.config": "Easy Freecam",
-  "button.easy-freecam.reset_defaults": "Reset to defaults",
+  "button.easy-freecam.reset_defaults": "Reset To Default",
   "option.easy-freecam.header.movement": "Movement",
   "option.easy-freecam.header.visual": "Visual",
   "option.easy-freecam.header.safety": "Safety",

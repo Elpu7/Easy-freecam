@@ -5,6 +5,9 @@ plugins {
 
 def selectedMcProfile = providers.gradleProperty('mc_profile').orNull
 if (selectedMcProfile != null) {
+    if (selectedMcProfile != 'mc26_3') {
+        throw new GradleException('The current Easy Freecam sources require Elib for Minecraft 26.3; use an earlier release to build older Minecraft versions.')
+    }
     def profileFile = rootProject.file("gradle/version-profiles/${selectedMcProfile}.properties")
     if (!profileFile.exists()) {
         throw new GradleException("Unknown mc_profile '${selectedMcProfile}'")
@@ -54,6 +57,10 @@ loom {
 
 repositories {
     maven {
+        name = 'Elpu7'
+        url = 'https://maven.elpu7.dev/releases'
+    }
+    maven {
         name = 'Terraformers'
         url = 'https://maven.terraformersmc.com/'
     }
@@ -63,6 +70,12 @@ dependencies {
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
     implementation "net.fabricmc:fabric-loader:${project.loader_version}"
     implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+
+    def localElib = rootProject.file("../Elib/fabric/build/libs/elib-${project.elib_version}-fabric.jar")
+    implementation localElib.exists()
+        ? files(localElib)
+        : "dev.elpu7:elib-fabric:${project.elib_version}"
+
     compileOnly("com.terraformersmc:modmenu:${project.modmenu_version}") {
         transitive = false
     }
@@ -72,13 +85,15 @@ processResources {
     inputs.property 'version', project.version
     inputs.property 'minecraft_dependency', project.minecraft_dependency
     inputs.property 'loader_dependency', project.loader_dependency
+    inputs.property 'elib_version', project.elib_version
     filteringCharset = 'UTF-8'
 
     filesMatching('fabric.mod.json') {
         expand(
             version: project.version,
             minecraft_dependency: project.minecraft_dependency,
-            loader_dependency: project.loader_dependency
+            loader_dependency: project.loader_dependency,
+            elib_version: project.elib_version
         )
     }
 }

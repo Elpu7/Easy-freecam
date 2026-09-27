@@ -28,6 +28,10 @@
         "versions": "${quilt_loader_dependency}"
       },
       {
+        "id": "elib",
+        "versions": ">=${elib_version}"
+      },
+      {
         "id": "minecraft",
         "versions": "${minecraft_dependency}"
       },

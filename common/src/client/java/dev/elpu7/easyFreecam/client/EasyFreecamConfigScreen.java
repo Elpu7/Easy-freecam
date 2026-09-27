@@ -1,18 +1,20 @@
 package dev.elpu7.easyFreecam.client;
 
+import dev.elpu7.elib.client.ElibConfigNotifications;
+
+import dev.elpu7.elib.client.gui.ConfigWidgets;
+import dev.elpu7.elib.client.gui.DoubleSliderWidget;
 import net.minecraft.client.OptionInstance;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Options;
-import net.minecraft.client.gui.components.AbstractSliderButton;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.layouts.GridLayout;
 import net.minecraft.client.gui.layouts.LinearLayout;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.options.OptionsSubScreen;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.util.Mth;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -184,9 +186,10 @@ public final class EasyFreecamConfigScreen extends OptionsSubScreen {
     private void resetToDefaults() {
         config.resetToDefaults();
         resetters.forEach(Runnable::run);
+        ElibConfigNotifications.reset();
     }
 
-    private DoubleSlider createDoubleSlider(
+    private DoubleSliderWidget createDoubleSlider(
         String key,
         String tooltipKey,
         double minValue,
@@ -194,15 +197,24 @@ public final class EasyFreecamConfigScreen extends OptionsSubScreen {
         DoubleSupplier currentValue,
         java.util.function.DoubleConsumer consumer
     ) {
-        DoubleSlider slider = new DoubleSlider(
-            key,
-            tooltipKey,
+        Tooltip tooltip = Tooltip.create(Component.translatable(tooltipKey));
+        DoubleSliderWidget slider = new DoubleSliderWidget(
+            0,
+            0,
+            150,
+            20,
             minValue,
             maxValue,
+            0.1D,
             currentValue.getAsDouble(),
+            value -> Component.empty()
+                .append(Component.translatable(key))
+                .append(": ")
+                .append(Component.literal(String.format(Locale.ROOT, "%.1f", value))),
+            value -> tooltip,
             consumer
         );
-        resetters.add(() -> slider.setActualValue(currentValue.getAsDouble()));
+        resetters.add(() -> slider.syncFromValue(currentValue.getAsDouble()));
         return slider;
     }
 
@@ -212,78 +224,13 @@ public final class EasyFreecamConfigScreen extends OptionsSubScreen {
         BooleanSupplier currentValue,
         java.util.function.Consumer<Boolean> consumer
     ) {
-        OptionInstance<Boolean> option = OptionInstance.createBoolean(
+        OptionInstance<Boolean> option = ConfigWidgets.booleanOption(
             key,
-            OptionInstance.cachedConstantTooltip(Component.translatable(tooltipKey)),
-            currentValue.getAsBoolean(),
-            consumer::accept
+            tooltipKey,
+            currentValue,
+            consumer
         );
         resetters.add(() -> option.set(currentValue.getAsBoolean()));
         return option;
-    }
-
-    private static final class DoubleSlider extends AbstractSliderButton {
-        private static final int WIDTH = 150;
-        private static final int HEIGHT = 20;
-
-        private final Component caption;
-        private final OptionInstance.TooltipSupplier<Double> tooltip;
-        private final double minValue;
-        private final double maxValue;
-        private final java.util.function.DoubleConsumer onValueChanged;
-
-        private DoubleSlider(
-            String key,
-            String tooltipKey,
-            double minValue,
-            double maxValue,
-            double initialValue,
-            java.util.function.DoubleConsumer onValueChanged
-        ) {
-            super(0, 0, WIDTH, HEIGHT, Component.empty(), toSliderValue(initialValue, minValue, maxValue));
-            this.caption = Component.translatable(key);
-            this.tooltip = OptionInstance.cachedConstantTooltip(Component.translatable(tooltipKey));
-            this.minValue = minValue;
-            this.maxValue = maxValue;
-            this.onValueChanged = onValueChanged;
-            updateMessage();
-        }
-
-        @Override
-        protected void updateMessage() {
-            setMessage(buildMessage());
-            setTooltip(tooltip.apply(getActualValue()));
-        }
-
-        @Override
-        protected void applyValue() {
-            onValueChanged.accept(getActualValue());
-        }
-
-        private double getActualValue() {
-            double actualValue = minValue + value * (maxValue - minValue);
-            return Math.round(actualValue * 10.0D) / 10.0D;
-        }
-
-        private void setActualValue(double actualValue) {
-            value = toSliderValue(actualValue, minValue, maxValue);
-            updateMessage();
-            applyValue();
-        }
-
-        private MutableComponent buildMessage() {
-            return Component.empty()
-                .append(caption)
-                .append(": ")
-                .append(Component.literal(formatValue(getActualValue())));
-        }
-
-        private static String formatValue(double value) {
-            return String.format(Locale.ROOT, "%.1f", value);
-        }
-
-        private static double toSliderValue(double value, double minValue, double maxValue) {
-            return Mth.inverseLerp(value, minValue, maxValue);
-        }
     }
 }

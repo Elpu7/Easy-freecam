@@ -9,6 +9,8 @@ base {
     archivesName = rootProject.archives_base_name
 }
 
+def localElibJar = rootProject.file("../Elib/quilt/build/libs/elib-${project.elib_version}-quilt.jar")
+
 sourceSets {
     main {
         java.srcDirs = [
@@ -40,6 +42,10 @@ loom {
 
 repositories {
     maven {
+        name = 'Elpu7'
+        url = 'https://maven.elpu7.dev/releases'
+    }
+    maven {
         name = 'Quilt'
         url = 'https://maven.quiltmc.org/repository/release/'
     }
@@ -52,6 +58,10 @@ repositories {
 dependencies {
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
     implementation "org.quiltmc:quilt-loader:${project.quilt_loader_version}"
+
+    implementation localElibJar.exists()
+        ? files(localElibJar)
+        : "dev.elpu7:elib-quilt:${project.elib_version}"
 
     // Fabric Loom does not read Quilt Loader's installer metadata. Mirror the
     // libraries declared by Quilt Loader 0.30.1 for development runs only.
@@ -74,13 +84,15 @@ processResources {
     inputs.property 'version', project.version
     inputs.property 'minecraft_dependency', project.minecraft_dependency
     inputs.property 'quilt_loader_dependency', project.quilt_loader_dependency
+    inputs.property 'elib_version', project.elib_version
     filteringCharset = 'UTF-8'
 
     filesMatching('quilt.mod.json') {
         expand(
             version: project.version,
             minecraft_dependency: project.minecraft_dependency,
-            quilt_loader_dependency: project.quilt_loader_dependency
+            quilt_loader_dependency: project.quilt_loader_dependency,
+            elib_version: project.elib_version
         )
     }
 }
@@ -106,7 +118,11 @@ tasks.named('runClient').configure {
     dependsOn tasks.named('jar')
 
     doFirst {
-        systemProperty 'loader.addMods', tasks.named('jar').get().archiveFile.get().asFile.absolutePath
+        def developmentMods = [tasks.named('jar').get().archiveFile.get().asFile]
+        if (localElibJar.exists()) {
+            developmentMods.add(localElibJar)
+        }
+        systemProperty 'loader.addMods', developmentMods.join(File.pathSeparator)
     }
 }
 

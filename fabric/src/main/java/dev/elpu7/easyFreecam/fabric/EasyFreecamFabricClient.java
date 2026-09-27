@@ -12,7 +12,9 @@ public final class EasyFreecamFabricClient implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
-        EasyFreecamClient.initialize(FabricLoader.getInstance().getConfigDir());
+        EasyFreecamClient.initialize(FabricLoader.getInstance().getConfigDir(),
+            FabricLoader.getInstance().getModContainer("easy-freecam").orElseThrow()
+                .getMetadata().getVersion().getFriendlyString());
 
         KeyMapping.Category category = KeyMapping.Category.register(FreecamController.getKeyCategoryId());
         KeyMappingHelper.registerKeyMapping(FreecamController.createToggleKey(category));

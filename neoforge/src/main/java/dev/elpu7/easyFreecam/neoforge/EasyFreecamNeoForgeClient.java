@@ -20,7 +20,7 @@ public final class EasyFreecamNeoForgeClient {
     public static final String MOD_ID = "easy_freecam";
 
     public EasyFreecamNeoForgeClient(IEventBus modBus, ModContainer container) {
-        EasyFreecamClient.initialize(FMLPaths.CONFIGDIR.get());
+        EasyFreecamClient.initialize(FMLPaths.CONFIGDIR.get(), container.getModInfo().getVersion().toString());
 
         modBus.addListener(this::registerKeyMappings);
         NeoForge.EVENT_BUS.addListener(this::onStartTick);

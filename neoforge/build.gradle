@@ -23,6 +23,20 @@ sourceSets {
     }
 }
 
+repositories {
+    maven {
+        name = 'Elpu7'
+        url = 'https://maven.elpu7.dev/releases'
+    }
+}
+
+dependencies {
+    def localElib = rootProject.file("../Elib/neoforge/build/libs/elib-${project.elib_version}-neoforge.jar")
+    implementation localElib.exists()
+        ? files(localElib)
+        : "dev.elpu7:elib-neoforge:${project.elib_version}"
+}
+
 neoForge {
     version = project.neoforge_version
 
@@ -44,7 +58,8 @@ processResources {
     def replacements = [
         mod_version: project.version,
         minecraft_version_range: project.minecraft_version_range,
-        neoforge_version: project.neoforge_version
+        neoforge_version: project.neoforge_version,
+        elib_version: project.elib_version
     ]
     inputs.properties replacements
     filteringCharset = 'UTF-8'

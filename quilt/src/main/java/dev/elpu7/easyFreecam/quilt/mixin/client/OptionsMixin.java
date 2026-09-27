@@ -32,7 +32,8 @@ public abstract class OptionsMixin {
         )
     )
     private void easyFreecam$registerKeyMapping(Minecraft minecraft, File gameDirectory, CallbackInfo ci) {
-        EasyFreecamClient.initialize(QuiltLoader.getConfigDir());
+        EasyFreecamClient.initialize(QuiltLoader.getConfigDir(),
+            QuiltLoader.getModContainer("easy-freecam").orElseThrow().metadata().version().raw());
         KeyMapping.Category category = KeyMapping.Category.register(FreecamController.getKeyCategoryId());
         KeyMapping toggleKey = FreecamController.createToggleKey(category);
         this.keyMappings = Arrays.copyOf(this.keyMappings, this.keyMappings.length + 1);

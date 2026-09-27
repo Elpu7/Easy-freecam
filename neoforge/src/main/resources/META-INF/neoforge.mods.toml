@@ -25,6 +25,13 @@ ordering="NONE"
 side="CLIENT"
 
 [[dependencies.easy_freecam]]
+modId="elib"
+type="required"
+versionRange="[${elib_version},)"
+ordering="NONE"
+side="CLIENT"
+
+[[dependencies.easy_freecam]]
 modId="minecraft"
 type="required"
 versionRange="${minecraft_version_range}"
