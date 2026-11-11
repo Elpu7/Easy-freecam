@@ -13,7 +13,6 @@ import net.minecraft.client.gui.layouts.GridLayout;
 import net.minecraft.client.gui.layouts.LinearLayout;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.options.OptionsSubScreen;
-import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 
 import java.util.ArrayList;
@@ -166,7 +165,7 @@ public final class EasyFreecamConfigScreen extends OptionsSubScreen {
             button -> resetToDefaults()
         ).width(150).build());
         footer.addChild(Button.builder(
-            CommonComponents.GUI_DONE,
+            Component.translatable("screen.elib.done"),
             button -> onClose()
         ).width(150).build());
         layout.addToFooter(footer);

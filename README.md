@@ -17,6 +17,7 @@ It gives you a smooth free camera that can move around the world with normal mov
 - Blocks accidental attacks, interactions, item drops, and swaps
 - Optional automatic disable when taking damage
 - Client-side only
+- Localization available through [Elib](https://modrinth.com/mod/elib)
 
 ## Default keybinds
 

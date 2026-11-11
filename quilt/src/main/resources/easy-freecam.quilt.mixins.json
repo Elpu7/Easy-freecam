@@ -4,7 +4,6 @@
   "package": "dev.elpu7.easyFreecam.quilt.mixin.client",
   "compatibilityLevel": "JAVA_25",
   "client": [
-    "ClientLanguageMixin",
     "MinecraftMixin",
     "OptionsMixin"
   ],
